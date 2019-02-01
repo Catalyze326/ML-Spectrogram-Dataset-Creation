@@ -233,7 +233,7 @@ def plotstft(audiopath, binsize=2 ** 10, plotpath=None, colormap="jet"):
 """End of his work """
 
 log = open("logs/log " + time.asctime() + ".txt", "w")
-# convert_to_wav()
-# sort_into_groups(25)
+convert_to_wav()
+sort_into_groups(25)
 split()
 create_spect()
