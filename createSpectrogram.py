@@ -28,7 +28,17 @@ def list_files(loc):
                 filelist.append(path + "/" + f)
     for file in filelist:
         print("We found " + file)
+    return filelist
 
+
+# List files in a directory going recursively.
+def list_files_not_recur(loc):
+    filelist = []
+    for path, dirs, files in os.walk(dir):
+        for f in files:
+            filelist.append(path + "/" + f)
+    for file in filelist:
+        print("We found " + file)
     return filelist
 
 
@@ -81,6 +91,7 @@ def sort_into_groups(size):
 
 
 def get_song_length(filename):
+    # print (filename)
     with contextlib.closing(wave.open(filename, 'r')) as f:
         frames = f.getnframes()
         rate = f.getframerate()
@@ -91,31 +102,36 @@ def get_song_length(filename):
 def split():
     audio_file_list = list_files(str(sys.argv[1]))
     for audio_file in audio_file_list:
-        print ("Splitting " + audio_file + ".")
-        log.write("Splitting " + audio_file + ".")
-        runs = int(get_song_length(audio_file) / 10)
-        t1 = 0
-        t2 = 10000
-        i = 0
-        while i < runs:
-            i += 1
-            t1 = t1 + 10000
-            t2 = t2 + 10000
-            newAudio = AudioSegment.from_wav(audio_file)
-            newAudio = newAudio[t1:t2]
-            newAudio.export(audio_file[:-4] + str(i) + '.wav', format="wav")
-        os.remove(audio_file)
-        print ("Deleting source file " + audio_file + ".")
-        log.write("Deleting source file " + audio_file + ".")
+        if(audio_file[-4:] == ".wav"):
+            if get_song_length(audio_file) > 11:
+                print ("Splitting " + audio_file + ".")
+                log.write("Splitting " + audio_file + ".")
+                runs = int(get_song_length(audio_file) / 10)
+                t1 = 0
+                t2 = 10000
+                i = 0
+                while i < runs:
+                    i += 1
+                    t1 = t1 + 10000
+                    t2 = t2 + 10000
+                    newAudio = AudioSegment.from_wav(audio_file)
+                    newAudio = newAudio[t1:t2]
+                    newAudio.export(audio_file[:-4] + str(i) + '.wav', format="wav")
+                os.remove(audio_file)
+                print ("Deleting source file " + audio_file + ".")
+                log.write("Deleting source file " + audio_file + ".")
+            else:
+                print("\nThe file had already been split")
+                log.write("\nThe file had already been split")
 
 
 # Currently only works for mp3s, but you can change it to whatever you want
 def convert_to_wav():
     audio_file_list = list_files(str(sys.argv[1]))
     for audio_file in audio_file_list:
-        if audio_file.split('.')[1] == "mp3":
-            print("Converting " + audio_file + " to .wav")
-            log.write("Converting " + audio_file + " to .wav")
+        if audio_file.split('.')[1] == "m4a":
+            print("Converting source file " + audio_file + " to .wav")
+            log.write("Converting source file " + audio_file + " to .wav\n")
             sound = pydub.AudioSegment.from_mp3(audio_file)
             sound.export(audio_file[:-4] + ".wav", format="wav")
             os.remove(audio_file)
@@ -133,7 +149,8 @@ def get_wav_info(audio_file):
 def create_spect():
     audioFileList = list_files(sys.argv[1])
     for audioFile in audioFileList:
-        if not audioFile[-4:] == ".png":
+        # if not audioFile[-4:] == ".png":
+        if not os.path.isfile(audioFile[:-4] + ".png"):
             millis = time.time()
 
             log.write("Creating Spectrogram with " + audioFile + "\n" + str(os.system("free -h")) + "\n")
@@ -143,7 +160,6 @@ def create_spect():
 
             log.write("The time is " + str((time.time()) - millis) + "\n\n")
             print("The time is " + str((time.time()) - millis) + "\n\n")
-
 
 
 """ The work below this is licensed under a Creative Commons Attribution 3.0 Unported License.
@@ -230,10 +246,12 @@ def plotstft(audiopath, binsize=2 ** 10, plotpath=None, colormap="jet"):
         plt.savefig(plotpath, bbox_inches="tight")
     plt.clf()
 
+
 """End of his work """
 
+folder, file = os.path.split(sys.argv[1])
 log = open("logs/log " + time.asctime() + ".txt", "w")
-convert_to_wav()
 sort_into_groups(25)
+convert_to_wav()
 split()
 create_spect()
