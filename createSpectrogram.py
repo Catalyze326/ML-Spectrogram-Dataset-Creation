@@ -250,7 +250,7 @@ def plotstft(audiopath, binsize=2 ** 10, plotpath=None, colormap="jet"):
 """End of his work """
 
 folder, file = os.path.split(sys.argv[1])
-log = open("logs/log " + sys.argv[3] + ".txt", "w")
+log = open("logs/log" + ".txt", "w")
 
 if sys.argv[2] == "true":
     sort_into_groups(25)

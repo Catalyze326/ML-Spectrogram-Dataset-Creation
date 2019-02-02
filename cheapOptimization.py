@@ -1,6 +1,6 @@
 import os
 import sys
-import time
+import threading
 
 
 # returns a list of the directories in a folder
@@ -57,11 +57,16 @@ def sort_into_groups(size):
                 print("It has already been sorted")
             i += 1
             k += 1
+def create_spect(dir):
+    os.system("python3 createSpectrogram.py " + dir + " false ")
 
 
 print("python3 createSpectrogram.py " + sys.argv[1] + " true")
 os.system("python3 createSpectrogram.py " + sys.argv[1] + " true")
 
+i = 0;
 dirlist = list_dirs(sys.argv[1])
-for dir in dirlist:
-    os.system("python3 createSpectrogram.py " + dir + " false ")
+for range in len(dirlist):
+    t1 = threading.Thread(target=create_spect, args=(dirlist[i],))
+    i += 1
+    t1.start()
