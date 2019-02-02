@@ -251,7 +251,10 @@ def plotstft(audiopath, binsize=2 ** 10, plotpath=None, colormap="jet"):
 
 folder, file = os.path.split(sys.argv[1])
 log = open("logs/log " + time.asctime() + ".txt", "w")
-sort_into_groups(25)
-convert_to_wav()
-split()
-create_spect()
+
+if sys.argv[1] == "true":
+    sort_into_groups(25)
+    convert_to_wav()
+    split()
+else:
+    create_spect()

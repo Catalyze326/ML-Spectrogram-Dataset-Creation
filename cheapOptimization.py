@@ -60,6 +60,8 @@ def sort_into_groups(size):
 
 # log = open("log " + time.asctime() + ".txt", "w")
 sort_into_groups(25)
+os.system("python3 createSpectrogram.py true")
+
 dirlist = list_dirs(sys.argv[1])
 for dir in dirlist:
     os.system("python3 createSpectrogram.py " + dir)
