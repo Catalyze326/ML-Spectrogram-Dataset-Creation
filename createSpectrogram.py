@@ -12,7 +12,7 @@ import os
 import os.path
 import time
 import contextlib
-import pylab
+import logging
 
 
 # List files in a directory going recursively.
@@ -31,17 +31,6 @@ def list_files(loc):
     return filelist
 
 
-# List files in a directory going recursively.
-def list_files_not_recur(loc):
-    filelist = []
-    for path, dirs, files in os.walk(dir):
-        for f in files:
-            filelist.append(path + "/" + f)
-    for file in filelist:
-        print("We found " + file)
-    return filelist
-
-
 # returns a list of the directories in a folder
 def list_dirs(loc):
     dirlist = []
@@ -53,15 +42,19 @@ def list_dirs(loc):
 
 
 # This sorts files each into its own directory named after the file
+# I ended up not using this method, but I might go back to it at somepoint
+# NOTE this must be used before splitting or else you will get a ton of folders
 def sort_files():
     filelist = list_files(sys.argv[1])
     for filename in filelist:
         folder, file = os.path.split(filename)
+        # Make the folder for each file
         try:
             os.mkdir(filename.split(".")[0])
         except OSError:
             print("The folder " + folder + " already existed")
-            log.write("The folder " + folder + " already existed")
+            logging.info("The folder " + folder + " already existed")
+        # Move the file into the folder that it is designated for
         os.rename(filename, filename.split(".")[0] + "/" + file)
 
 
@@ -70,29 +63,37 @@ def sort_into_groups(size):
     filelist = list_files(sys.argv[1])
     i = 0
     j = 0
+    # loop throuch once for each of the files in filelist
     while i < len(filelist) - 1:
-        folder, lol = os.path.split(filelist[0])
+        # This splits a path into the filder and the file name
+        folder, file = os.path.split(filelist[0])
+        # Make the folders to sort everything into
         try:
             os.mkdir(folder + "/" + "folder#" + str(j))
         except:
             print("The folder " + folder + "/" + "folder#" + str(j) + "already exists")
-            log.write("The folder " + folder + "/" + "folder#" + str(j) + "already exists")
-        j += 1
+            logging.info("The folder " + folder + "/" + "folder#" + str(j) + "already exists")
         for k in range(size):
+            # The while loop is in the wrong place for it to catch an end loop
+            # event so it has to be put here
             if len(filelist) <= i:
                 break
-            folder, lol = os.path.split(filelist[i])
+            # This time we do need file
+            folder, file = os.path.split(filelist[i])
+            # This does splits the files into the folders
             try:
-                os.rename(filelist[i], folder + "/" + "folder#" + str(j - 1) + "/" + lol)
+                os.rename(filelist[i], folder + "/" + "folder#" + str(j) + "/" + file)
             except:
                 print("It has already been sorted")
             i += 1
             k += 1
+            j += 1
 
 
+# returns the durration of a audio file
 def get_song_length(filename):
-    # print (filename)
     with contextlib.closing(wave.open(filename, 'r')) as f:
+        # Easy math... Num of frames / framrate == durration of the song
         frames = f.getnframes()
         rate = f.getframerate()
         duration = frames / float(rate)
@@ -102,11 +103,17 @@ def get_song_length(filename):
 def split():
     audio_file_list = list_files(str(sys.argv[1]))
     for audio_file in audio_file_list:
+        # Check if it is a wav file
         if(audio_file[-4:] == ".wav"):
+            # This is to check if the song has already been cut down
             if get_song_length(audio_file) > 11:
                 print ("Splitting " + audio_file + ".")
-                log.write("Splitting " + audio_file + ".")
+                logging.info("Splitting " + audio_file + ".")
+                # Find how many times it needs to split the audio file
                 runs = int(get_song_length(audio_file) / 10)
+                # Sets the values so that it can go by 10 second clips
+                # In order to chance the number you have to change all the
+                # 1000s (done in ms) and the / 10 which is done in seconds
                 t1 = 0
                 t2 = 10000
                 i = 0
@@ -114,51 +121,59 @@ def split():
                     i += 1
                     t1 = t1 + 10000
                     t2 = t2 + 10000
+                    # makes the 10 second clips of the audio file
                     newAudio = AudioSegment.from_wav(audio_file)
                     newAudio = newAudio[t1:t2]
+                    # exports it as the filename with a the itorator after it
                     newAudio.export(audio_file[:-4] + str(i) + '.wav', format="wav")
+                # Deletes source file after the smaller files have been made
                 os.remove(audio_file)
+
                 print ("Deleting source file " + audio_file + ".")
-                log.write("Deleting source file " + audio_file + ".")
+                logging.info("Deleting source file " + audio_file + ".")
             else:
                 print("\nThe file had already been split")
-                log.write("\nThe file had already been split")
+                logging.info("\nThe file had already been split")
 
 
-# Currently only works for mp3s, but you can change it to whatever you want
+# Currently only works for mp3s, but you can change it to any file type that
+# is supported in the library
 def convert_to_wav():
     audio_file_list = list_files(str(sys.argv[1]))
     for audio_file in audio_file_list:
+        # Filters out any files that are not mp3s
         if audio_file.split('.')[1] == "mp3":
             print("Converting source file " + audio_file + " to .wav")
-            log.write("Converting source file " + audio_file + " to .wav\n")
+            logging.info("Converting source file " + audio_file + " to .wav\n")
+
+            # Converts an mp3 file to a wav. You can change some of these values
+            # but not everything works
             sound = pydub.AudioSegment.from_mp3(audio_file)
             sound.export(audio_file[:-4] + ".wav", format="wav")
+
+            # Deletes mp3 after the wav has been generated
             os.remove(audio_file)
+        else:
+            print("\nThe file has already been converted to wav.")
+            logging.info("\nThe file has already been converted to wav.")
 
 
-def get_wav_info(audio_file):
-    wav = wave.open(audio_file, 'r')
-    frames = wav.readframes(-1)
-    sound_info = pylab.fromstring(frames, 'Int16')
-    frame_rate = wav.getframerate()
-    wav.close()
-    return sound_info, frame_rate
-
-
+# Create the spectrograms
 def create_spect():
     audioFileList = list_files(sys.argv[1])
     for audioFile in audioFileList:
-        # if not audioFile[-4:] == ".png":
         if not os.path.isfile(audioFile[:-4] + ".png"):
             millis = time.time()
 
-            log.write("Creating Spectrogram with " + audioFile + "\n" + str(os.system("free -h")) + "\n")
+            # Reports ram and swap space usage for each spectrogram
+            logging.info("Creating Spectrogram with " + audioFile + "\n" + str(os.system("free -h")) + "\n")
             print ("Creating Spectrogram with " + audioFile + "\n" + str(os.system("free -h")) + "\n")
 
+            # Creates the spectrogram
             plotstft(audioFile, 1024, audioFile[:-4] + ".png")
 
-            log.write("The time is " + str((time.time()) - millis) + "\n\n")
+            # reports the time that it took to generate the spectrogram
+            logging.info("The time is " + str((time.time()) - millis) + "\n\n")
             print("The time is " + str((time.time()) - millis) + "\n\n")
 
 
@@ -250,11 +265,11 @@ def plotstft(audiopath, binsize=2 ** 10, plotpath=None, colormap="jet"):
 """End of his work """
 
 folder, file = os.path.split(sys.argv[1])
-log = open("logs/log " + sys.argv[3] + ".txt", "w")
+logging.basicConfig(filename="logfilename" + str(time.localtime) + ".log", level=logging.INFO)
 
 if sys.argv[2] == "true":
     sort_into_groups(25)
-    convert_to_wav()
+    # convert_to_wav()
     split()
 else:
     create_spect()
