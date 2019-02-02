@@ -1,6 +1,9 @@
-This is a ML algorithm that classifies songs by style of dance, although it should work for classifacation of genres.
+This will be a ML algorithm that classifies songs by style of dance, although it should work for classifacation of genres as well.
 
 It uses Spectrograms to use image classifacation on audio files. The field of audio classifacation is fairly untested so this is a way to use a more mature method to classify audio.
+
+This is an example of what the program currently createes. This is a part of the song Drops of Jupiter by Train.
+![alt text](https://github.com/Catalyze326/ML-Spectrogram-Dataset-Creation/blob/master/spectroTest/1024/DropsOfJupiter.png)
 
 It is ment to be used with linux. If you desperately need a windows adaption to it email me at calebmorton98@gmail.com, however if you sue windows I would sugest you use bash on Windows before trying to modify it to work with windows.
 
@@ -8,5 +11,3 @@ It is ment to work with a large quantities of mp3 files which it turns into wav 
 
 When turning files into spectrograms en masse there seem to be problems with memory where the memory is not flushed after one spectrogram is generated. Because of this I took the easy route and optamized it by writing another script that will run one folder (25 songs) at a time. This is a cheap way of optimization, but it is the best I can do for now.
 
-This is an example of what the program currently createes. This is a part of the song Drops of Jupiter by Train.
-![alt text](https://github.com/Catalyze326/ML-Spectrogram-Dataset-Creation/blob/master/spectroTest/1024/DropsOfJupiter.png)
