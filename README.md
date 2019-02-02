@@ -3,7 +3,7 @@ This will be a ML algorithm that classifies songs by style of dance, although it
 It uses Spectrograms to use image classifacation on audio files. The field of audio classifacation is fairly untested so this is a way to use a more mature method to classify audio.
 
 This is an example of what the program currently createes. This is a part of the song Drops of Jupiter by Train.
-![alt text](https://github.com/Catalyze326/ML-Spectrogram-Dataset-Creation/blob/master/spectroTest/Spectrograms/DropsOfJupiter.png)
+![alt text](https://github.com/Catalyze326/ML-Spectrogram-Dataset-Creation/blob/master/Spectrograms/DropsOfJupiter.png)
 
 It is ment to be used with linux. If you desperately need a windows adaption to it email me at calebmorton98@gmail.com, however if you sue windows I would sugest you use bash on Windows before trying to modify it to work with windows.
 
