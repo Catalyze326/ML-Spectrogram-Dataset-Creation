@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 
 
 # returns a list of the directories in a folder
@@ -58,10 +59,9 @@ def sort_into_groups(size):
             k += 1
 
 
-# log = open("log " + time.asctime() + ".txt", "w")
-sort_into_groups(25)
-os.system("python3 createSpectrogram.py true")
+print("python3 createSpectrogram.py " + sys.argv[1] + " true")
+os.system("python3 createSpectrogram.py " + sys.argv[1] + " true")
 
 dirlist = list_dirs(sys.argv[1])
 for dir in dirlist:
-    os.system("python3 createSpectrogram.py " + dir)
+    os.system("python3 createSpectrogram.py " + dir + " false ")

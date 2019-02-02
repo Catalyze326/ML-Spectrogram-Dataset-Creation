@@ -129,7 +129,7 @@ def split():
 def convert_to_wav():
     audio_file_list = list_files(str(sys.argv[1]))
     for audio_file in audio_file_list:
-        if audio_file.split('.')[1] == "m4a":
+        if audio_file.split('.')[1] == "mp3":
             print("Converting source file " + audio_file + " to .wav")
             log.write("Converting source file " + audio_file + " to .wav\n")
             sound = pydub.AudioSegment.from_mp3(audio_file)
@@ -250,9 +250,9 @@ def plotstft(audiopath, binsize=2 ** 10, plotpath=None, colormap="jet"):
 """End of his work """
 
 folder, file = os.path.split(sys.argv[1])
-log = open("logs/log " + time.asctime() + ".txt", "w")
+log = open("logs/log " + sys.argv[3] + ".txt", "w")
 
-if sys.argv[1] == "true":
+if sys.argv[2] == "true":
     sort_into_groups(25)
     convert_to_wav()
     split()
