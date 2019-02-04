@@ -13,6 +13,8 @@ import os.path
 import time
 import contextlib
 import logging
+import threading
+import multiprocessing
 
 
 # List files in a directory going recursively.
@@ -59,7 +61,7 @@ def sort_files():
 
 
 # Puts folders into groups of 25 at a time
-def sort_into_groups(size):
+def sort_into_groups(size = 25):
     filelist = list_files(sys.argv[1])
     i = 0
     j = 0
@@ -100,62 +102,92 @@ def get_song_length(filename):
         return duration
 
 
-def split():
-    audio_file_list = list_files(str(sys.argv[1]))
-    for audio_file in audio_file_list:
-        # Check if it is a wav file
-        if(audio_file[-4:] == ".wav"):
-            # This is to check if the song has already been cut down
-            if get_song_length(audio_file) > 11:
-                print ("Splitting " + audio_file + ".")
-                logging.info("Splitting " + audio_file + ".")
-                # Find how many times it needs to split the audio file
-                runs = int(get_song_length(audio_file) / 10)
-                # Sets the values so that it can go by 10 second clips
-                # In order to chance the number you have to change all the
-                # 1000s (done in ms) and the / 10 which is done in seconds
-                t1 = 0
-                t2 = 10000
-                i = 0
-                while i < runs:
-                    i += 1
-                    t1 = t1 + 10000
-                    t2 = t2 + 10000
-                    # makes the 10 second clips of the audio file
-                    newAudio = AudioSegment.from_wav(audio_file)
-                    newAudio = newAudio[t1:t2]
-                    # exports it as the filename with a the itorator after it
-                    newAudio.export(audio_file[:-4] + str(i) + '.wav', format="wav")
-                # Deletes source file after the smaller files have been made
-                os.remove(audio_file)
+def split(audio_file):
+    # Check if it is a wav file
+    if(audio_file[-4:] == ".wav"):
+        # This is to check if the song has already been cut down
+        if get_song_length(audio_file) > 11:
+            print ("Splitting " + audio_file + ".")
+            logging.info("Splitting " + audio_file + ".")
+            # Find how many times it needs to split the audio file
+            runs = int(get_song_length(audio_file) / 10)
+            # Sets the values so that it can go by 10 second clips
+            # In order to chance the number you have to change all the
+            # 1000s (done in ms) and the / 10 which is done in seconds
+            t1 = 0
+            t2 = 10000
+            i = 0
+            while i < runs:
+                i += 1
+                t1 = t1 + 10000
+                t2 = t2 + 10000
+                # makes the 10 second clips of the audio file
+                newAudio = AudioSegment.from_wav(audio_file)
+                newAudio = newAudio[t1:t2]
+                # exports it as the filename with a the itorator after it
+                newAudio.export(audio_file[:-4] + str(i) + '.wav', format="wav")
+            # Deletes source file after the smaller files have been made
+            os.remove(audio_file)
 
-                print ("Deleting source file " + audio_file + ".")
-                logging.info("Deleting source file " + audio_file + ".")
-            else:
-                print("\nThe file had already been split")
-                logging.info("\nThe file had already been split")
+            print ("Deleting source file " + audio_file + ".")
+            logging.info("Deleting source file " + audio_file + ".")
+        else:
+            print("\nThe file had already been split")
+            logging.info("\nThe file had already been split")
 
 
 # Currently only works for mp3s, but you can change it to any file type that
 # is supported in the library
-def convert_to_wav():
+def convert_to_wav(audio_file):
+    # Filters out any files that are not mp3s
+    if audio_file.split('.')[1] == "mp3":
+        print("Converting source file " + audio_file + " to .wav")
+        logging.info("Converting source file " + audio_file + " to .wav\n")
+
+        # Converts an mp3 file to a wav. You can change some of these values
+        # but not everything works
+        sound = pydub.AudioSegment.from_mp3(audio_file)
+        sound.export(audio_file[:-4] + ".wav", format="wav")
+
+        # Deletes mp3 after the wav has been generated
+        os.remove(audio_file)
+    else:
+        print("\nThe file has already been converted to wav.")
+        logging.info("\nThe file has already been converted to wav.")
+
+
+# controls the multithreading of convert_to_wav
+def convert_master():
+    # I have to use two counters because if I dont then when it goes to t1.join
+    # it will skip a file because it will itorate
+    i = 0
     audio_file_list = list_files(str(sys.argv[1]))
-    for audio_file in audio_file_list:
-        # Filters out any files that are not mp3s
-        if audio_file.split('.')[1] == "mp3":
-            print("Converting source file " + audio_file + " to .wav")
-            logging.info("Converting source file " + audio_file + " to .wav\n")
-
-            # Converts an mp3 file to a wav. You can change some of these values
-            # but not everything works
-            sound = pydub.AudioSegment.from_mp3(audio_file)
-            sound.export(audio_file[:-4] + ".wav", format="wav")
-
-            # Deletes mp3 after the wav has been generated
-            os.remove(audio_file)
+    for j in range(len(audio_file_list)):
+        if not threading.activeCount() >= multiprocessing.cpu_count():
+            t1 = threading.Thread(target=convert_to_wav, args=(audio_file_list[i], ))
+            t1.start()
+            i += 1
+            print("There are currently " + str(threading.active_count()) + " threads running")
+            logging.info("There are currently " + str(threading.active_count()) + " threads running")
         else:
-            print("\nThe file has already been converted to wav.")
-            logging.info("\nThe file has already been converted to wav.")
+            t1.join()
+
+
+# controls the multithreading of convert_to_wav
+def split_master():
+    # I have to use two counters because if I dont then when it goes to t1.join
+    # it will skip a file because it will itorate
+    i = 0
+    audio_file_list = list_files(str(sys.argv[1]))
+    for j in range(len(audio_file_list)):
+        if not threading.activeCount() >= multiprocessing.cpu_count():
+            t1 = threading.Thread(target=split, args=(audio_file_list[i], ))
+            t1.start()
+            i += 1
+            print("There are currently " + str(threading.active_count()) + " threads running")
+            logging.info("There are currently " + str(threading.active_count()) + " threads running")
+        else:
+            t1.join()
 
 
 # Create the spectrograms
@@ -268,8 +300,8 @@ folder, file = os.path.split(sys.argv[1])
 logging.basicConfig(filename="logfilename" + str(time.localtime) + ".log", level=logging.INFO)
 
 if sys.argv[2] == "true":
-    sort_into_groups(25)
-    convert_to_wav()
-    split()
+    convert_master()
+    split_master()
+    sort_into_groups()
 else:
     create_spect()
