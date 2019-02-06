@@ -75,6 +75,7 @@ def sort_into_groups(size = 25):
         except:
             print("The folder " + folder + "/" + "folder#" + str(j) + "already exists")
             logging.info("The folder " + folder + "/" + "folder#" + str(j) + "already exists")
+        print(size)
         for k in range(size):
             # The while loop is in the wrong place for it to catch an end loop
             # event so it has to be put here
@@ -88,8 +89,7 @@ def sort_into_groups(size = 25):
             except:
                 print("It has already been sorted")
             i += 1
-            k += 1
-            j += 1
+        j += 1
 
 
 # returns the durration of a audio file
@@ -156,40 +156,6 @@ def convert_to_wav(audio_file):
         logging.info("\nThe file has already been converted to wav.")
 
 
-# controls the multithreading of convert_to_wav
-def convert_master():
-    # I have to use two counters because if I dont then when it goes to t1.join
-    # it will skip a file because it will itorate
-    i = 0
-    audio_file_list = list_files(str(sys.argv[1]))
-    for j in range(len(audio_file_list)):
-        if not threading.activeCount() >= multiprocessing.cpu_count():
-            t1 = threading.Thread(target=convert_to_wav, args=(audio_file_list[i], ))
-            t1.start()
-            i += 1
-            print("There are currently " + str(threading.active_count()) + " threads running")
-            logging.info("There are currently " + str(threading.active_count()) + " threads running")
-        else:
-            t1.join()
-
-
-# controls the multithreading of convert_to_wav
-def split_master():
-    # I have to use two counters because if I dont then when it goes to t1.join
-    # it will skip a file because it will itorate
-    i = 0
-    audio_file_list = list_files(str(sys.argv[1]))
-    for j in range(len(audio_file_list)):
-        if not threading.activeCount() >= multiprocessing.cpu_count():
-            t1 = threading.Thread(target=split, args=(audio_file_list[i], ))
-            t1.start()
-            i += 1
-            print("There are currently " + str(threading.active_count()) + " threads running")
-            logging.info("There are currently " + str(threading.active_count()) + " threads running")
-        else:
-            t1.join()
-
-
 # Create the spectrograms
 def create_spect():
     audioFileList = list_files(sys.argv[1])
@@ -207,6 +173,45 @@ def create_spect():
             # reports the time that it took to generate the spectrogram
             logging.info("The time is " + str((time.time()) - millis) + "\n\n")
             print("The time is " + str((time.time()) - millis) + "\n\n")
+
+
+# controls the multithreading of convert_to_wav
+def convert_master():
+    # I have to use two counters because if I dont then when it goes to t1.join
+    # it will skip a file because it will itorate
+    i = 0
+    cores = multiprocessing.cpu_count()
+    audio_file_list = list_files(str(sys.argv[1]))
+    length = len(audio_file_list) - 1
+    while i <= length:
+        if not threading.activeCount() >= cores:
+            t1 = threading.Thread(target=convert_to_wav, args=(audio_file_list[i],))
+            t1.start()
+            i += 1
+            print("There are currently " + str(threading.active_count()) + " threads running")
+            logging.info("There are currently " + str(threading.active_count()) + " threads running")
+        else:
+            t1.join()
+
+
+# controls the multithreading of convert_to_wav
+def split_master():
+    # I have to use two counters because if I dont then when it goes to t1.join
+    # it will skip a file because it will itorate
+    i = 0
+    cores = multiprocessing.cpu_count()
+    audio_file_list = list_files(str(sys.argv[1]))
+    length = len(audio_file_list)
+    # for j in range(len(audio_file_list)):
+    while i <= length -1:
+        if not threading.activeCount() >= cores:
+            t1 = threading.Thread(target=split, args=(audio_file_list[i], ))
+            t1.start()
+            i += 1
+            print("There are currently " + str(threading.active_count()) + " threads running")
+            logging.info("There are currently " + str(threading.active_count()) + " threads running")
+        else:
+            t1.join()
 
 
 """ The work below this is licensed under a Creative Commons Attribution 3.0 Unported License.
@@ -263,7 +268,7 @@ def logscale_spec(spec, sr=44100, factor=20.):
     return newspec, freqs
 
 
-""" plot spectrogram"""
+""" plot spectrogram """
 
 
 def plotstft(audiopath, binsize=2 ** 10, plotpath=None, colormap="jet"):
@@ -294,7 +299,7 @@ def plotstft(audiopath, binsize=2 ** 10, plotpath=None, colormap="jet"):
     plt.clf()
 
 
-"""End of his work """
+""" End of his work """
 
 folder, file = os.path.split(sys.argv[1])
 logging.basicConfig(filename="logfilename" + str(time.localtime) + ".log", level=logging.INFO)
@@ -302,6 +307,6 @@ logging.basicConfig(filename="logfilename" + str(time.localtime) + ".log", level
 if sys.argv[2] == "true":
     convert_master()
     split_master()
-    sort_into_groups()
+    sort_into_groups(25)
 else:
     create_spect()

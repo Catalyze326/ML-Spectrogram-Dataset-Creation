@@ -20,10 +20,14 @@ def create_spect(dir):
 
 os.system("python3 createSpectrogram.py " + sys.argv[1] + " true")
 
+# TODO put something in to kill it with ctrl + c
 i = 0
+cores = multiprocessing.cpu_count()
 dirlist = list_dirs(sys.argv[1])
-for j in range(len(dirlist)):
-    if not threading.activeCount() >= multiprocessing.cpu_count():
+length = len(dirlist)
+print(length)
+while i < length:
+    if threading.activeCount() <= cores:
         t1 = threading.Thread(target=create_spect, args=(dirlist[i],))
         i += 1
         t1.start()
